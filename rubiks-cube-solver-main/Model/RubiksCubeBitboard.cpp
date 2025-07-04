@@ -1,4 +1,3 @@
-
 #include "RubiksCubeBitboard.h"
 #include "RubiksCube.h"
 #include <iostream>
@@ -373,28 +372,31 @@ std::vector<RubiksCube::MOVE> RubiksCubeBitboard::randomShuffleCube(unsigned int
 void RubiksCubeBitboard::print() const {
     RubiksCube::print();
 }
-
 void RubiksCubeBitboard::setCubeState(const std::vector<std::vector<std::vector<RubiksCube::COLOR>>>& faces) {
-    // Reset the bitboard to all zeros
-    for (int i = 0; i < 6; i++) {
-        bitboard[i] = 0;
-    }
-    
-    // Set up each face according to the input array
     for (int face = 0; face < 6; face++) {
+        bitboard[face] = 0;
         for (int row = 0; row < 3; row++) {
             for (int col = 0; col < 3; col++) {
-                int idx = arr[row][col];
-                if (idx == 8) continue; // Skip center piece
-                
+                int adjustedRow = row, adjustedCol = col;
+
+                if (face == static_cast<int>(RubiksCube::FACE::LEFT)) {
+                    adjustedRow = col;
+                    adjustedCol = 2 - row;
+                } else if (face == static_cast<int>(RubiksCube::FACE::RIGHT)) {
+                    adjustedRow = 2 - col;
+                    adjustedCol = row;
+                } else if (face == static_cast<int>(RubiksCube::FACE::BACK)) {
+                    adjustedRow = 2 - row;
+                    adjustedCol = 2 - col;
+                }
+
+                int idx = arr[adjustedRow][adjustedCol];
+                if (idx == 8) continue; // Skip center
+
                 RubiksCube::COLOR color = faces[face][row][col];
-                uint64_t colorValue = (1 << (int)color);
+                uint64_t colorValue = (1ULL << static_cast<int>(color));
                 bitboard[face] |= colorValue << (8 * idx);
             }
         }
     }
-    
-    // DO NOT update solved_side_config here!
-    // solved_side_config should remain the original solved state configuration
-    // which was set in the constructor
 }
