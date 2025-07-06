@@ -1,0 +1,969 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rubik's Cube Solver</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            max-width: 1200px;
+            width: 100%;
+        }
+
+        h1 {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        .cube-container {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 30px;
+        }
+
+        .cube {
+            display: grid;
+            grid-template-columns: repeat(12, 40px);
+            grid-template-rows: repeat(9, 40px);
+            gap: 2px;
+            background: #333;
+            padding: 10px;
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+        }
+
+        .sticker {
+            width: 40px;
+            height: 40px;
+            border: 2px solid #333;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 12px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .sticker:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
+        }
+
+        .sticker.W { background-color: #ffffff; color: #333; }
+        .sticker.G { background-color: #00ff00; color: #333; }
+        .sticker.R { background-color: #ff0000; color: #fff; }
+        .sticker.B { background-color: #0000ff; color: #fff; }
+        .sticker.O { background-color: #ffa500; color: #333; }
+        .sticker.Y { background-color: #ffff00; color: #333; }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            font-size: 16px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .solution-container {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .solution-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .solution-moves {
+            font-family: 'Courier New', monospace;
+            font-size: 16px;
+            color: #666;
+            line-height: 1.6;
+        }
+
+        .move {
+            display: inline-block;
+            padding: 4px 8px;
+            margin: 2px;
+            background: #f0f0f0;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .move:hover {
+            background: #e0e0e0;
+            transform: scale(1.05);
+        }
+
+        .move.current {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .status {
+            text-align: center;
+            margin: 20px 0;
+            padding: 10px;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .status.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            color: white;
+            font-size: 18px;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .color-picker {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .color-option {
+            width: 30px;
+            height: 30px;
+            border: 3px solid #333;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .color-option:hover {
+            transform: scale(1.2);
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
+        }
+
+        .color-option.selected {
+            border-color: #fff;
+            box-shadow: 0 0 15px rgba(255, 255, 255, 1);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎲 Rubik's Cube Solver</h1>
+        
+        <div class="color-picker">
+            <div class="color-option" data-color="W" style="background-color: #ffffff;" title="White"></div>
+            <div class="color-option" data-color="G" style="background-color: #00ff00;" title="Green"></div>
+            <div class="color-option" data-color="R" style="background-color: #ff0000;" title="Red"></div>
+            <div class="color-option" data-color="B" style="background-color: #0000ff;" title="Blue"></div>
+            <div class="color-option" data-color="O" style="background-color: #ffa500;" title="Orange"></div>
+            <div class="color-option" data-color="Y" style="background-color: #ffff00;" title="Yellow"></div>
+        </div>
+
+        <div class="cube-container">
+            <div class="cube" id="cube"></div>
+        </div>
+
+        <div class="controls">
+            <button class="btn btn-primary" onclick="scrambleCube()">🎲 Scramble</button>
+            <button class="btn btn-secondary" onclick="resetCube()">🔄 Reset</button>
+            <button class="btn btn-success" onclick="solveCube()">🧩 Solve</button>
+            <button class="btn btn-primary" onclick="printState()">🖨️ Print State</button>
+            <button class="btn btn-secondary" onclick="testServerConnection()">🔗 Test Server</button>
+        </div>
+
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>Solving cube...</p>
+        </div>
+
+        <div id="status"></div>
+
+        <div class="solution-container" id="solutionContainer" style="display: none;">
+            <div class="solution-title">Solution: <span id="progressIndicator">0/0</span></div>
+            <div class="solution-moves" id="solutionMoves"></div>
+            <div style="text-align: center; margin-top: 15px;">
+                <button class="btn btn-primary" onclick="animateSolution()">▶️ Animate Solution</button>
+                <button class="btn btn-secondary" onclick="stepForward()">⏭️ Step Forward</button>
+                <button class="btn btn-secondary" onclick="stepBackward()">⏮️ Step Backward</button>
+                <button class="btn btn-secondary" onclick="stopAnimation()">⏹️ Stop</button>
+                <button class="btn btn-secondary" onclick="resetToStart()">🔄 Reset to Start</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Color to bit mapping (matching Flask backend)
+        const COLOR_TO_BIT = {
+            'W': 0, 'G': 1, 'R': 2, 'B': 3, 'O': 4, 'Y': 5
+        };
+        
+        const FACE_ORDER = ['U', 'L', 'F', 'R', 'B', 'D'];
+        const COLORS = ['W', 'G', 'R', 'B', 'O', 'Y'];
+        
+        let selectedColor = 'W';
+        let cubeState = {};
+        let initialCubeState = {}; // Store initial state for animation reset
+        let solutionMoves = [];
+        let animationInterval = null;
+        let currentMoveIndex = 0;
+        
+        // Initialize cube state
+        function initializeCube() {
+            // Standard solved cube state
+            cubeState = {
+                'U': ['W', 'W', 'W', 'W', 'W', 'W', 'W', 'W'],
+                'L': ['O', 'O', 'O', 'O', 'O', 'O', 'O', 'O'],
+                'F': ['G', 'G', 'G', 'G', 'G', 'G', 'G', 'G'],
+                'R': ['R', 'R', 'R', 'R', 'R', 'R', 'R', 'R'],
+                'B': ['B', 'B', 'B', 'B', 'B', 'B', 'B', 'B'],
+                'D': ['Y', 'Y', 'Y', 'Y', 'Y', 'Y', 'Y', 'Y']
+            };
+            renderCube();
+        }
+        
+        // Render the cube in planar net format
+        function renderCube() {
+            const cube = document.getElementById('cube');
+            cube.innerHTML = '';
+            
+            // Create 9x12 grid for planar net
+            for (let row = 0; row < 9; row++) {
+                for (let col = 0; col < 12; col++) {
+                    const sticker = document.createElement('div');
+                    sticker.className = 'sticker';
+                    
+                    let color = null;
+                    let face = null;
+                    let index = -1;
+                    
+                    // U face (rows 0-2, cols 3-5)
+                    if (row >= 0 && row <= 2 && col >= 3 && col <= 5) {
+                        face = 'U';
+                        if (row === 1 && col === 4) {
+                            color = 'W'; // Center
+                            sticker.textContent = 'U';
+                        } else {
+                            index = getStickerIndex(row, col, 0, 3, 'U');
+                            color = cubeState['U'][index];
+                        }
+                    }
+                    // L face (rows 3-5, cols 0-2)
+                    else if (row >= 3 && row <= 5 && col >= 0 && col <= 2) {
+                        face = 'L';
+                        if (row === 4 && col === 1) {
+                            color = 'O'; // Center
+                            sticker.textContent = 'L';
+                        } else {
+                            index = getStickerIndex(row, col, 3, 0, 'L');
+                            color = cubeState['L'][index];
+                        }
+                    }
+                    // F face (rows 3-5, cols 3-5)
+                    else if (row >= 3 && row <= 5 && col >= 3 && col <= 5) {
+                        face = 'F';
+                        if (row === 4 && col === 4) {
+                            color = 'G'; // Center
+                            sticker.textContent = 'F';
+                        } else {
+                            index = getStickerIndex(row, col, 3, 3, 'F');
+                            color = cubeState['F'][index];
+                        }
+                    }
+                    // R face (rows 3-5, cols 6-8)
+                    else if (row >= 3 && row <= 5 && col >= 6 && col <= 8) {
+                        face = 'R';
+                        if (row === 4 && col === 7) {
+                            color = 'R'; // Center
+                            sticker.textContent = 'R';
+                        } else {
+                            index = getStickerIndex(row, col, 3, 6, 'R');
+                            color = cubeState['R'][index];
+                        }
+                    }
+                    // B face (rows 3-5, cols 9-11)
+                    else if (row >= 3 && row <= 5 && col >= 9 && col <= 11) {
+                        face = 'B';
+                        if (row === 4 && col === 10) {
+                            color = 'B'; // Center
+                            sticker.textContent = 'B';
+                        } else {
+                            index = getStickerIndex(row, col, 3, 9, 'B');
+                            color = cubeState['B'][index];
+                        }
+                    }
+                    // D face (rows 6-8, cols 3-5)
+                    else if (row >= 6 && row <= 8 && col >= 3 && col <= 5) {
+                        face = 'D';
+                        if (row === 7 && col === 4) {
+                            color = 'Y'; // Center
+                            sticker.textContent = 'D';
+                        } else {
+                            index = getStickerIndex(row, col, 6, 3, 'D');
+                            color = cubeState['D'][index];
+                        }
+                    }
+                    
+                    if (color) {
+                        sticker.classList.add(color);
+                        if (index >= 0) {
+                            sticker.onclick = () => changeStickerColor(face, index);
+                        }
+                    }
+                    
+                    cube.appendChild(sticker);
+                }
+            }
+        }
+        
+        // Get sticker index for face array (excluding center)
+        function getStickerIndex(row, col, faceRowStart, faceColStart, face) {
+            const localRow = row - faceRowStart;
+            const localCol = col - faceColStart;
+            
+            // Convert 3x3 grid position to 8-element array index (excluding center)
+            const gridIndex = localRow * 3 + localCol;
+            const indexMap = [0, 1, 2, 3, -1, 4, 5, 6, 7]; // -1 for center
+            return indexMap[gridIndex];
+        }
+        
+        // Change sticker color
+        function changeStickerColor(face, index) {
+            if (index >= 0) {
+                cubeState[face][index] = selectedColor;
+                renderCube();
+            }
+        }
+        
+        // Scramble cube
+        function scrambleCube() {
+            for (let face of FACE_ORDER) {
+                for (let i = 0; i < 8; i++) {
+                    cubeState[face][i] = COLORS[Math.floor(Math.random() * COLORS.length)];
+                }
+            }
+            renderCube();
+            showStatus('Cube scrambled!', 'info');
+        }
+        
+        // Reset cube to solved state
+        function resetCube() {
+            initializeCube();
+            showStatus('Cube reset to solved state!', 'success');
+            hideSolution();
+        }
+        
+        // Convert color array to bitboard
+        function colorArrayToBitboard(faceColors) {
+            let bits = 0n;
+            for (let i = 0; i < 8; i++) {
+                const color = faceColors[i];
+                const bit = BigInt(COLOR_TO_BIT[color] || 0);
+                const stickerVal = 1n << bit;
+                bits |= stickerVal << BigInt(i * 8);
+            }
+            return bits;
+        }
+        
+        // Test server connection
+        async function testServer() {
+            try {
+                const response = await fetch('http://localhost:5000/test');
+                const data = await response.json();
+                console.log('Server test response:', data);
+                return true;
+            } catch (error) {
+                console.error('Server test failed:', error);
+                return false;
+            }
+        }
+        
+        // Solve cube
+        async function solveCube() {
+    showLoading(true);
+    hideSolution();
+    
+    // Save current cube state for animation
+    initialCubeState = JSON.parse(JSON.stringify(cubeState));
+    
+    try {
+        // First test if server is reachable
+        const serverOk = await testServer();
+        if (!serverOk) {
+            throw new Error('Cannot connect to server. Please ensure Flask app is running on localhost:5000');
+        }
+        
+        // Convert cube state to bitboards
+        const bitboards = FACE_ORDER.map(face => {
+            const bitboard = colorArrayToBitboard(cubeState[face]);
+            return bitboard.toString();
+        });
+        
+        console.log('Sending bitboards:', bitboards);
+        
+        // Add timeout to prevent hanging
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 45000); // 45 second timeout
+        
+        const response = await fetch('http://localhost:5000/solve', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                bitboards: bitboards
+            }),
+            signal: controller.signal
+        });
+        
+        clearTimeout(timeoutId);
+        
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`Server error: ${response.status} - ${errorText}`);
+        }
+        
+        const data = await response.json();
+        console.log('Server response:', data);
+        
+        if (data.error) {
+            throw new Error(`Solver error: ${data.error}`);
+        }
+        
+        if (data.solution && data.solution.length > 0) {
+            solutionMoves = data.solution;
+            showSolution(solutionMoves);
+            showStatus(`Solution found! ${solutionMoves.length} moves.`, 'success');
+        } else {
+            showStatus('No solution found or cube is already solved.', 'info');
+        }
+        
+    } catch (error) {
+        console.error('Solve error:', error);
+        
+        if (error.name === 'AbortError') {
+            showStatus('Request timed out. Try a simpler cube state.', 'error');
+        } else if (error.message.includes('Failed to fetch')) {
+            showStatus('Cannot connect to server. Check if Flask app is running.', 'error');
+        } else {
+            showStatus('Error solving cube: ' + error.message, 'error');
+        }
+    } finally {
+        showLoading(false);
+    }
+}
+        
+        // Test server connection manually
+        async function testServerConnection() {
+            showStatus('Testing server connection...', 'info');
+            const serverOk = await testServer();
+            if (serverOk) {
+                showStatus('Server connection successful!', 'success');
+            } else {
+                showStatus('Server connection failed. Check if Flask app is running.', 'error');
+            }
+        }
+        
+        // Print cube state
+        async function printState() {
+            try {
+                const bitboards = FACE_ORDER.map(face => 
+                    colorArrayToBitboard(cubeState[face]).toString()
+                );
+                
+                const response = await fetch('http://localhost:5000/print_state', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        bitboards: bitboards
+                    })
+                });
+                
+                const data = await response.json();
+                showStatus('Cube state printed to server console.', 'info');
+            } catch (error) {
+                showStatus('Error printing state: ' + error.message, 'error');
+            }
+        }
+        
+        // Show/hide loading
+        function showLoading(show) {
+            document.getElementById('loading').style.display = show ? 'block' : 'none';
+        }
+        
+        // Show status message
+        function showStatus(message, type) {
+            const status = document.getElementById('status');
+            status.textContent = message;
+            status.className = `status ${type}`;
+            status.style.display = 'block';
+            
+            setTimeout(() => {
+                status.style.display = 'none';
+            }, 5000);
+        }
+        
+        // Update progress indicator
+        function updateProgress() {
+            const indicator = document.getElementById('progressIndicator');
+            if (indicator) {
+                indicator.textContent = `${currentMoveIndex}/${solutionMoves.length}`;
+            }
+        }
+        
+        // Show solution
+        function showSolution(moves) {
+            const container = document.getElementById('solutionContainer');
+            const movesDiv = document.getElementById('solutionMoves');
+            
+            movesDiv.innerHTML = moves.map((move, index) => 
+                `<span class="move" data-index="${index}">${move}</span>`
+            ).join(' ');
+            
+            container.style.display = 'block';
+            updateProgress();
+        }
+        
+        // Hide solution
+        function hideSolution() {
+            document.getElementById('solutionContainer').style.display = 'none';
+            stopAnimation();
+            currentMoveIndex = 0;
+            updateProgress();
+        }
+        
+        // Animate solution
+        function animateSolution() {
+            if (solutionMoves.length === 0) return;
+            
+            stopAnimation();
+            currentMoveIndex = 0;
+            updateProgress();
+            
+            // Reset cube to the state when solve was called
+            if (Object.keys(initialCubeState).length > 0) {
+                cubeState = JSON.parse(JSON.stringify(initialCubeState));
+            } else {
+                initializeCube();
+            }
+            renderCube();
+            
+            animationInterval = setInterval(() => {
+                // Clear previous highlight
+                document.querySelectorAll('.move').forEach(el => 
+                    el.classList.remove('current')
+                );
+                
+                // Highlight current move
+                const currentMove = document.querySelector(`[data-index="${currentMoveIndex}"]`);
+                if (currentMove) {
+                    currentMove.classList.add('current');
+                }
+                
+                // Apply the current move to the cube
+                if (currentMoveIndex < solutionMoves.length) {
+                    const move = solutionMoves[currentMoveIndex];
+                    applyMove(move);
+                    renderCube();
+                }
+                
+                currentMoveIndex++;
+                updateProgress();
+                
+                if (currentMoveIndex >= solutionMoves.length) {
+                    stopAnimation();
+                    showStatus('Animation complete!', 'success');
+                }
+            }, 1000);
+        }
+        
+        // Apply a single move to the cube state
+        function applyMove(move) {
+            const moveType = move.charAt(0);
+            const modifier = move.length > 1 ? move.charAt(1) : '';
+            
+            switch (moveType) {
+                case 'U':
+                    rotateFace('U', modifier === "'" ? -1 : 1);
+                    if (modifier === '2') {
+                        rotateFace('U', 1);
+                    }
+                    break;
+                case 'D':
+                    rotateFace('D', modifier === "'" ? -1 : 1);
+                    if (modifier === '2') {
+                        rotateFace('D', 1);
+                    }
+                    break;
+                case 'L':
+                    rotateFace('L', modifier === "'" ? -1 : 1);
+                    if (modifier === '2') {
+                        rotateFace('L', 1);
+                    }
+                    break;
+                case 'R':
+                    rotateFace('R', modifier === "'" ? -1 : 1);
+                    if (modifier === '2') {
+                        rotateFace('R', 1);
+                    }
+                    break;
+                case 'F':
+                    rotateFace('F', modifier === "'" ? -1 : 1);
+                    if (modifier === '2') {
+                        rotateFace('F', 1);
+                    }
+                    break;
+                case 'B':
+                    rotateFace('B', modifier === "'" ? -1 : 1);
+                    if (modifier === '2') {
+                        rotateFace('B', 1);
+                    }
+                    break;
+            }
+        }
+        
+        // Rotate a face (direction: 1 for clockwise, -1 for counter-clockwise)
+        function rotateFace(face, direction) {
+            const faceArray = cubeState[face];
+            const rotated = [...faceArray];
+            
+            // Rotate the face stickers
+            if (direction === 1) { // Clockwise
+                rotated[0] = faceArray[6];
+                rotated[1] = faceArray[7];
+                rotated[2] = faceArray[0];
+                rotated[3] = faceArray[1];
+                rotated[4] = faceArray[2];
+                rotated[5] = faceArray[3];
+                rotated[6] = faceArray[4];
+                rotated[7] = faceArray[5];
+            } else { // Counter-clockwise
+                rotated[0] = faceArray[2];
+                rotated[1] = faceArray[3];
+                rotated[2] = faceArray[4];
+                rotated[3] = faceArray[5];
+                rotated[4] = faceArray[6];
+                rotated[5] = faceArray[7];
+                rotated[6] = faceArray[0];
+                rotated[7] = faceArray[1];
+            }
+            
+            cubeState[face] = rotated;
+            
+            // Rotate adjacent edges (simplified - this is a basic implementation)
+            // For a complete implementation, you'd need to handle all edge cases
+            rotateAdjacentEdges(face, direction);
+        }
+        
+        // Rotate adjacent edges when a face is rotated
+        function rotateAdjacentEdges(face, direction) {
+            // Define edge relationships for each face
+            const edgeMappings = {
+                'U': {
+                    adjacent: ['L', 'F', 'R', 'B'],
+                    edges: [
+                        [0, 1, 2], // L face top edge
+                        [0, 1, 2], // F face top edge  
+                        [0, 1, 2], // R face top edge
+                        [0, 1, 2]  // B face top edge
+                    ]
+                },
+                'D': {
+                    adjacent: ['L', 'B', 'R', 'F'],
+                    edges: [
+                        [5, 6, 7], // L face bottom edge
+                        [5, 6, 7], // B face bottom edge
+                        [5, 6, 7], // R face bottom edge
+                        [5, 6, 7]  // F face bottom edge
+                    ]
+                },
+                'L': {
+                    adjacent: ['U', 'B', 'D', 'F'],
+                    edges: [
+                        [6, 7, 0], // U face left edge
+                        [2, 3, 4], // B face right edge
+                        [2, 3, 4], // D face left edge
+                        [6, 7, 0]  // F face left edge
+                    ]
+                },
+                'R': {
+                    adjacent: ['U', 'F', 'D', 'B'],
+                    edges: [
+                        [2, 3, 4], // U face right edge
+                        [2, 3, 4], // F face right edge
+                        [6, 7, 0], // D face right edge
+                        [6, 7, 0]  // B face left edge
+                    ]
+                },
+                'F': {
+                    adjacent: ['U', 'R', 'D', 'L'],
+                    edges: [
+                        [4, 5, 6], // U face bottom edge
+                        [6, 7, 0], // R face left edge
+                        [0, 1, 2], // D face top edge
+                        [2, 3, 4]  // L face right edge
+                    ]
+                },
+                'B': {
+                    adjacent: ['U', 'L', 'D', 'R'],
+                    edges: [
+                        [0, 1, 2], // U face top edge
+                        [6, 7, 0], // L face left edge
+                        [4, 5, 6], // D face bottom edge
+                        [2, 3, 4]  // R face right edge
+                    ]
+                }
+            };
+            
+            const mapping = edgeMappings[face];
+            if (!mapping) return;
+            
+            // Store the edge values before rotation
+            const edgeValues = mapping.adjacent.map((adjFace, i) => {
+                const edgeIndices = mapping.edges[i];
+                return edgeIndices.map(idx => cubeState[adjFace][idx]);
+            });
+            
+            // Rotate the edge values
+            if (direction === 1) { // Clockwise
+                // Shift edges clockwise
+                for (let i = 0; i < mapping.adjacent.length; i++) {
+                    const adjFace = mapping.adjacent[i];
+                    const edgeIndices = mapping.edges[i];
+                    const nextEdgeValues = edgeValues[(i + 1) % edgeValues.length];
+                    
+                    edgeIndices.forEach((idx, j) => {
+                        cubeState[adjFace][idx] = nextEdgeValues[j];
+                    });
+                }
+            } else { // Counter-clockwise
+                // Shift edges counter-clockwise
+                for (let i = 0; i < mapping.adjacent.length; i++) {
+                    const adjFace = mapping.adjacent[i];
+                    const edgeIndices = mapping.edges[i];
+                    const prevEdgeValues = edgeValues[(i - 1 + edgeValues.length) % edgeValues.length];
+                    
+                    edgeIndices.forEach((idx, j) => {
+                        cubeState[adjFace][idx] = prevEdgeValues[j];
+                    });
+                }
+            }
+        }
+        
+        // Step forward one move
+        function stepForward() {
+            if (solutionMoves.length === 0) return;
+            
+            if (currentMoveIndex < solutionMoves.length) {
+                // Clear previous highlight
+                document.querySelectorAll('.move').forEach(el => 
+                    el.classList.remove('current')
+                );
+                
+                // Highlight current move
+                const currentMove = document.querySelector(`[data-index="${currentMoveIndex}"]`);
+                if (currentMove) {
+                    currentMove.classList.add('current');
+                }
+                
+                // Apply the current move
+                const move = solutionMoves[currentMoveIndex];
+                applyMove(move);
+                renderCube();
+                
+                currentMoveIndex++;
+                updateProgress();
+                
+                if (currentMoveIndex >= solutionMoves.length) {
+                    showStatus('Solution complete!', 'success');
+                }
+            }
+        }
+        
+        // Step backward one move
+        function stepBackward() {
+            if (solutionMoves.length === 0 || currentMoveIndex <= 0) return;
+            
+            currentMoveIndex--;
+            updateProgress();
+            
+            // Clear current highlight
+            document.querySelectorAll('.move').forEach(el => 
+                el.classList.remove('current')
+            );
+            
+            // Highlight previous move
+            const prevMove = document.querySelector(`[data-index="${currentMoveIndex}"]`);
+            if (prevMove) {
+                prevMove.classList.add('current');
+            }
+            
+            // Reset to initial state and apply moves up to current index
+            if (Object.keys(initialCubeState).length > 0) {
+                cubeState = JSON.parse(JSON.stringify(initialCubeState));
+            } else {
+                initializeCube();
+            }
+            
+            // Apply all moves up to current index
+            for (let i = 0; i < currentMoveIndex; i++) {
+                applyMove(solutionMoves[i]);
+            }
+            
+            renderCube();
+        }
+        
+        // Reset to start of solution
+        function resetToStart() {
+            if (solutionMoves.length === 0) return;
+            
+            currentMoveIndex = 0;
+            updateProgress();
+            
+            // Clear all highlights
+            document.querySelectorAll('.move').forEach(el => 
+                el.classList.remove('current')
+            );
+            
+            // Reset cube to initial state
+            if (Object.keys(initialCubeState).length > 0) {
+                cubeState = JSON.parse(JSON.stringify(initialCubeState));
+            } else {
+                initializeCube();
+            }
+            
+            renderCube();
+            showStatus('Reset to start of solution', 'info');
+        }
+        
+        // Stop animation
+        function stopAnimation() {
+            if (animationInterval) {
+                clearInterval(animationInterval);
+                animationInterval = null;
+            }
+            
+            document.querySelectorAll('.move').forEach(el => 
+                el.classList.remove('current')
+            );
+        }
+        
+        // Color picker event listeners
+        document.addEventListener('DOMContentLoaded', function() {
+            const colorOptions = document.querySelectorAll('.color-option');
+            
+            colorOptions.forEach(option => {
+                option.addEventListener('click', function() {
+                    // Remove selection from all options
+                    colorOptions.forEach(opt => opt.classList.remove('selected'));
+                    
+                    // Add selection to clicked option
+                    this.classList.add('selected');
+                    selectedColor = this.dataset.color;
+                });
+            });
+            
+            // Set default selection
+            colorOptions[0].classList.add('selected');
+            
+            // Initialize cube
+            initializeCube();
+        });
+    </script>
+</body>
+</html>

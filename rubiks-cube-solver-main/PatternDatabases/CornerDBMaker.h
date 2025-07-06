@@ -1,11 +1,7 @@
-//
-// Created by Lakshya Mittal on 18-02-2022.
-//
-
 #ifndef RUBIKS_CUBE_SOLVER_CORNERDBMAKER_H
 #define RUBIKS_CUBE_SOLVER_CORNERDBMAKER_H
 #include "CornerPatternDatabase.h"
-#include "../Model/RubiksCubeBitboard.h"
+#include "../Model/RubiksCubeBitboard.cpp"
 
 using namespace std;
 

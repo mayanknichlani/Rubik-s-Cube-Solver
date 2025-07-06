@@ -1,22 +1,23 @@
-//
-// Created by Shubham Patil on 17/12/21.
-//
-
 #include "RubiksCube.h"
 
 //
 //Given a color return it's first letter
 //
 
-char RubiksCube::getColorLetter(RubiksCube::COLOR color) {
+char RubiksCube::getColorLetter(COLOR color) {
     switch (color) {
-        case RubiksCube::COLOR::WHITE: return 'W';
-        case RubiksCube::COLOR::GREEN: return 'G';
-        case RubiksCube::COLOR::RED: return 'R';
-        case RubiksCube::COLOR::BLUE: return 'B';
-        case RubiksCube::COLOR::ORANGE: return 'O';
-        case RubiksCube::COLOR::YELLOW: return 'Y';
-        default: return '?';
+        case COLOR::BLUE:
+            return 'B';
+        case COLOR::GREEN:
+            return 'G';
+        case COLOR::RED:
+            return 'R';
+        case COLOR::YELLOW:
+            return 'Y';
+        case COLOR::WHITE:
+            return 'W';
+        case COLOR::ORANGE:
+            return 'O';
     }
 }
 
